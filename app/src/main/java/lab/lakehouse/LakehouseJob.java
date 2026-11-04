@@ -6,18 +6,19 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kinesis.source.KinesisStreamsSource;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.flink.CatalogLoader;
+import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.IcebergSink;
 import org.apache.iceberg.types.Types;
@@ -51,6 +52,9 @@ public class LakehouseJob {
             catalog.createTable(id, schema, spec);
         }
         TableLoader tableLoader = TableLoader.fromCatalog(catalogLoader, id);
+        // RowData type info derived from the table schema (native serializer, not Kryo)
+        InternalTypeInfo<RowData> rowType =
+                InternalTypeInfo.of(FlinkSchemaUtil.convert(catalog.loadTable(id).schema()));
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         // One checkpoint per minute = one Iceberg commit and one snapshot per minute.
@@ -65,9 +69,11 @@ public class LakehouseJob {
                 .build();
 
         DataStream<RowData> rows = env
-                .fromSource(source, WatermarkStrategy.noWatermarks(), "kinesis-eventos")
+                // explicit type: KinesisStreamsSource does not expose it (type erasure)
+                .fromSource(source, WatermarkStrategy.noWatermarks(), "kinesis-eventos",
+                        org.apache.flink.api.common.typeinfo.Types.STRING)
                 .flatMap(new EventParser())
-                .returns(TypeInformation.of(RowData.class));
+                .returns(rowType);
 
         IcebergSink.forRowData(rows)
                 .tableLoader(tableLoader)

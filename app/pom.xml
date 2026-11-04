@@ -17,7 +17,23 @@
     <iceberg.version>1.7.1</iceberg.version>
     <kinesis.connector.version>5.0.0-1.19</kinesis.connector.version>
     <hadoop.version>3.3.6</hadoop.version>
+    <!-- One AWS SDK v2 version for Iceberg (Glue, S3) and the Kinesis connector -->
+    <awssdk.version>2.29.6</awssdk.version>
   </properties>
+
+  <!-- Mixing SDK versions in the shaded jar breaks Kinesis CBOR responses
+       ("Unable to unmarshall response ... JsonParseException"), so the BOM pins every module. -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <!-- Provided by the Managed Flink runtime -->
@@ -45,7 +61,7 @@
       <version>1.2.0</version>
     </dependency>
 
-    <!-- Iceberg: Flink runtime + AWS module (GlueCatalog, S3FileIO) with the AWS SDK v2 bundled -->
+    <!-- Iceberg: Flink runtime + AWS module (GlueCatalog, S3FileIO) -->
     <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-flink-runtime-1.19</artifactId>
@@ -56,10 +72,34 @@
       <artifactId>iceberg-aws</artifactId>
       <version>${iceberg.version}</version>
     </dependency>
+    <!-- AWS SDK v2 modules iceberg-aws needs (instead of iceberg-aws-bundle, which ships its own SDK version) -->
     <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-aws-bundle</artifactId>
-      <version>${iceberg.version}</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>glue</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>kms</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>dynamodb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>apache-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
     </dependency>
 
     <!-- Kinesis source -->

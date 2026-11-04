@@ -10,7 +10,8 @@ resource "aws_cloudwatch_log_stream" "flink" {
 
 resource "aws_s3_object" "app_jar" {
   bucket = aws_s3_bucket.artifacts.id
-  key    = "app/lakehouse-flink.jar"
+  # Hash in the key: a new jar changes file_key, so Terraform updates (and restarts) the Flink app.
+  key    = "app/lakehouse-flink-${filemd5(var.app_jar_path)}.jar"
   source = var.app_jar_path
   etag   = filemd5(var.app_jar_path)
 }
