@@ -1,0 +1,23 @@
+# Maven build output (the shaded jar is ~127 MB, over GitHub's 100 MB limit)
+app/target/
+
+# Terraform: providers, state and local overrides (state can hold secrets)
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
