@@ -21,3 +21,6 @@ override.tf.json
 *.iml
 .DS_Store
 Thumbs.db
+
+# Material de la clase (guion del docente): no se sube al repo
+clase-5.md
